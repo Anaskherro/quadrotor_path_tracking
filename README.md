@@ -1,83 +1,87 @@
 # quadrotor_path_tracking
 
-Path tracking for quadrotor UAVs using PID and MPC controllers.  
-Uses planned paths (from `quadrotor_path_planning`) and implements controllers to follow waypoints, while performing necessary coordinate transforms and interpolation.
+Path tracking for quadrotor UAVs using **PID** and **MPC** controllers.  
+This repo takes planned paths (e.g. from `quadrotor_path_planning/paths`) and executes them with MAVROS + Gazebo.
 
 ---
 
-## Overview
+## Step-by-step setup
 
-This repository provides multiple path‐tracking modules, organized per controller type and per vehicle platform. It supports:
+### 1. Prepare environment
+- Ubuntu 20.04 + ROS Noetic  
+- Install dependencies:
+  ```bash
+  sudo apt install ros-noetic-mavros ros-noetic-mavros-extras
+  ```
+- Clone the repo inside your catkin_ws:
+  ```bash
+  cd ~/catkin_ws/src
+  git clone https://github.com/Anaskherro/quadrotor_path_tracking.git
+  cd ~/catkin_ws && catkin build
+  ```
 
-- PID controller tracking for Iris, X500, etc.  
-- MPC controller tracking when available.  
-- Path transformations (resampling, smoothing, interpolation).  
-- Multiple tracking implementations under different vehicle models.
+### 2. Run autopilot (SITL)
+- Use ArduPilot SITL (from planning setup).
+- Launch Iris or X500 in Gazebo:
+  ```bash
+  roslaunch iris_path_tracking apm.launch
+  # or
+  roslaunch x500_path_tracking apm.launch
+  ```
 
 ---
 
-## Repository structure
+## 3. PID Tracking
+1. Place the planned path file in `paths/path.txt`.  
+2. Launch simulation with MAVROS:
+   ```bash
+   roslaunch iris_path_tracking lidar.launch
+   ```
+3. Run PID controller:
+   ```bash
+   python3 drone_control/command.py
+   python3 drone_control/dronepath.py   # visualize trajectory
+   ```
+
+---
+
+## 4. MPC Tracking
+1. Install **mrs_uav_system**:
+   ```bash
+   sudo apt install ros-noetic-mrs-uav-system-full
+   ```
+2. Launch MPC simulation:
+   ```bash
+   roslaunch mrs_uav_gazebo_simulation tmux/one_drone.launch
+   ```
+3. Edit `config/example_params.yaml` to load trajectory from `paths/path.txt`.  
+4. Start trajectory tracking:
+   ```bash
+   rosservice call /uav1/control_manager/start_trajectory_tracking
+   ```
+
+---
+
+## Output
+- Rviz shows reference (blue) vs tracked path (orange/green).  
+- Gazebo simulates quadrotor following trajectory.  
+- MPC usually yields smoother & more predictive control than PID.
+
+---
+
+## Repo structure
 
 ```
 quadrotor_path_tracking/
-├─ paths/                      # Input path files (from path planning)
-├─ path_transformations/       # Resampling, smoothing, interpolation routines
-├─ drone_control/              # Controller‐specific code (PID / MPC)
-├─ iris_path_tracking/         # Tracking tuned for Iris model
-├─ x500_path_tracking/         # Tracking tuned for X500 vehicle
+├─ paths/                  # Input trajectories
+├─ path_transformations/   # Path smoothing, resampling
+├─ drone_control/          # PID/MPC controllers
+├─ iris_path_tracking/     # Iris-specific configs
+├─ x500_path_tracking/     # X500-specific configs
 └─ README.md
 ```
 
 ---
 
-## Requirements
-
-- Python 3.8+  
-- `numpy`, `scipy`, `matplotlib`  
-- MPC dependencies: e.g. `cvxpy`  
-- ROS/MAVROS (if used in simulation or real deployment)  
-
----
-
-## Usage
-
-- Place a path file from the planning repo into `paths/`.  
-- If necessary, transform or smooth the path via `path_transformations/`.  
-- Select a controller:  
-  - `drone_control/` for generic quadrotor.  
-  - `iris_path_tracking/` for Iris.  
-  - `x500_path_tracking/` for X500.  
-- Run the appropriate controller script.
-
-Example (PID):
-```python
-from drone_control.pid_controller import PIDController
-controller = PIDController(vehicle_params, path, dt)
-controller.run()
-```
-
----
-
-## Configuration variables
-
-Set in code or config modules:
-
-- Vehicle parameters: mass, inertia, max tilt, max thrust  
-- Control gains: `KP_pos`, `KI_pos`, `KD_pos`  
-- MPC: horizon length, cost weights, constraints  
-- Path: smoothing factor, resampling distance  
-
----
-
-## Best Practices & Tips
-
-- Ensure path is feasible (curvature, acceleration).  
-- Start with PID gains before trying MPC.  
-- Visualize in simulation (Gazebo or similar) before real deployment.  
-- Use smaller time steps for accurate tracking.  
-
----
-
 ## License
-
-MIT License (see `LICENSE`).
+MIT (see LICENSE)
