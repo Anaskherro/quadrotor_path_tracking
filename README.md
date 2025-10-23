@@ -17,6 +17,7 @@ This repo takes planned paths (e.g. from `quadrotor_path_planning/paths`) and ex
   ```bash
   cd ~/catkin_ws/src
   git clone https://github.com/Intelligent-Quads/iq_sim.git
+  git clone https://github.com/Intelligent-Quads/iq_gnc.git
   git clone https://github.com/Anaskherro/quadrotor_path_tracking.git
   cd ~/catkin_ws && catkin build
   ```
